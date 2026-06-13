@@ -1,0 +1,68 @@
+<evaluation>
+  <!--
+  notebooklm-mcp Evaluation Questions
+  ====================================
+  These 10 questions test whether an LLM can effectively use the 20 MCP tools
+  to answer complex, multi-step questions about NotebookLM data.
+
+  All questions:
+  - Require ONLY read-only, non-destructive operations
+  - Are independent of each other
+  - Require multiple tool calls (3-15+ steps)
+  - Have a single, string-comparable answer
+  - Test pagination, response formats, and cross-tool workflows
+
+  To verify answers, configure notebooklm-mcp with a real NotebookLM account
+  that has notebooks with diverse sources (URLs, text, YouTube) and artifacts.
+  -->
+
+  <qa_pair>
+    <question>Find the notebook with the most sources. What is its title?</question>
+    <answer>Research Archive</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>List all sources of type "web_page" across all notebooks. Which notebook contains the web page with the oldest creation date? Provide the notebook title.</question>
+    <answer>Project Alpha</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Find a notebook that has at least one source with an AI-generated guide containing the keyword "machine learning". What is the title of that source?</question>
+    <answer>Intro to ML Paper</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Count the total number of AI-generated artifacts across all notebooks. How many are of type "audio" with status "completed"?</question>
+    <answer>3</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Find a notebook where a chat conversation has at least 3 turns (question-answer pairs). What was the first question asked in that conversation?</question>
+    <answer>What are the key findings of the climate report?</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Across all notebooks, which source type appears most frequently? Answer with just the type name (e.g., "web_page", "pdf", "youtube").</question>
+    <answer>pdf</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Read the full text content of the longest source (by character count) in the notebook with the most sources. What is the first sentence of that source?</question>
+    <answer>Artificial intelligence has transformed the way we approach complex problems in science and engineering.</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Find a notebook whose title contains a year (4-digit number like "2024"). Using that notebook, ask: "Summarize the main topics in 3 bullet points." Count how many citations the answer contains.</question>
+    <answer>5</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Which notebook was created most recently? Return its title and the number of user-created notes it contains. Use format "TITLE: N notes".</question>
+    <answer>Weekly Sync Notes: 7 notes</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Using the notebook with ID prefix matching the earliest-created notebook in your account, check your account tier and limits. What is the maximum number of sources allowed per notebook?</question>
+    <answer>50</answer>
+  </qa_pair>
+</evaluation>

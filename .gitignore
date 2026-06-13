@@ -1,0 +1,48 @@
+# === Bytecode ===
+__pycache__/
+*.py[cod]
+*.pyo
+
+# === Build / distribution ===
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# === Virtual environments ===
+.venv/
+venv/
+env/
+ENV/
+
+# === OS ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Environment / secrets ===
+.env
+.env.*
+!.env.example
+
+# === Claude Code ===
+# Keep skills installed via the skill system
+.claude/skills/
+# Keep local settings (auth configuration)
+# Uncomment the next line if you want to exclude your local MCP config:
+# .claude/settings.local.json
+
+# === Runtime artifacts ===
+*.log
