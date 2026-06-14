@@ -6,7 +6,7 @@ MCP (Model Context Protocol) server that bridges Claude Code / Claude Cowork wit
 
 ## Features
 
-- **20 MCP tools** covering notebooks, sources, chat, artifacts, notes, and account management
+- **24 MCP tools** covering notebooks, sources, chat, artifacts, notes, and account management
 - **Pagination** on all list tools (`limit`/`offset` with metadata)
 - **Dual output format**: JSON (structured) and Markdown (human-readable) on 15 tools
 - **Service prefix** (`notebooklm_*`) to prevent collisions with other MCP servers
@@ -23,7 +23,7 @@ MCP (Model Context Protocol) server that bridges Claude Code / Claude Cowork wit
 
 ```bash
 # Clone the repository
-git clone https://github.com/marco/notebooklm-py-mcp.git
+git clone https://github.com/ripafratta/notebooklm-py-mcp.git
 cd notebooklm-py-mcp
 
 # Install in editable mode
@@ -142,23 +142,27 @@ You can verify the server is registered:
 | `notebooklm_rename_notebook` | Rename an existing notebook | ❌ |
 | `notebooklm_delete_notebook` | ⚠️ Permanently delete a notebook and all contents | ❌ |
 
-### Sources (6 tools)
+### Sources (8 tools)
 
 | Tool | Description | Read‑only |
 |------|-------------|:---------:|
 | `notebooklm_list_sources` | List sources with type, status, URL, pagination | ✅ |
 | `notebooklm_add_source_url` | Add a web page or YouTube video as a source | ❌ |
 | `notebooklm_add_source_text` | Add pasted text as a source | ❌ |
+| `notebooklm_add_source_file` | Upload a local file (PDF, Markdown, EPUB, Word, text) | ❌ |
+| `notebooklm_rename_source` | Rename a source | ❌ |
 | `notebooklm_get_source_content` | Get full indexed text extracted by NotebookLM | ✅ |
 | `notebooklm_get_source_guide` | Get AI-generated summary and keywords for a source | ✅ |
 | `notebooklm_delete_source` | ⚠️ Permanently remove a source and its content | ❌ |
 
-### Chat (2 tools)
+### Chat (4 tools)
 
 | Tool | Description | Read‑only |
 |------|-------------|:---------:|
 | `notebooklm_chat_ask` | Ask a question against notebook sources with citations | ✅ |
 | `notebooklm_get_chat_history` | Get recent Q&A history with pagination | ✅ |
+| `notebooklm_configure_chat` | Set chat persona, goal, and response length | ❌ |
+| `notebooklm_set_chat_mode` | Quick preset: default, learning guide, concise, detailed | ❌ |
 
 ### Artifacts (4 tools)
 
@@ -182,6 +186,115 @@ You can verify the server is registered:
 |------|-------------|:---------:|
 | `notebooklm_get_account` | Get account tier, plan name, and limits | ✅ |
 
+## API Coverage
+
+The table below shows every method available in [`notebooklm-py`](https://github.com/teng-lin/notebooklm-py) and whether it's exposed as an MCP tool.
+
+### Notebooks (5/11 covered)
+
+| notebooklm-py method | MCP tool | Status |
+|----------------------|----------|:------:|
+| `list()` | `notebooklm_list_notebooks` | ✅ |
+| `create(title)` | `notebooklm_create_notebook` | ✅ |
+| `get(id)` | `notebooklm_get_notebook` | ✅ |
+| `rename(id, title)` | `notebooklm_rename_notebook` | ✅ |
+| `delete(id)` | `notebooklm_delete_notebook` | ✅ |
+| `get_summary(id)` | — | ❌ |
+| `get_description(id)` | — | ❌ |
+| `get_metadata(id)` | — | ❌ |
+| `get_raw(id)` | — | ❌ |
+| `remove_from_recent(id)` | — | ❌ |
+| `share(...)` | — | ❌ |
+
+### Sources (8/14 covered)
+
+| notebooklm-py method | MCP tool | Status |
+|----------------------|----------|:------:|
+| `list(nb_id)` | `notebooklm_list_sources` | ✅ |
+| `add_url(nb_id, url)` | `notebooklm_add_source_url` | ✅ |
+| `add_text(nb_id, title, text)` | `notebooklm_add_source_text` | ✅ |
+| `add_file(nb_id, path)` | `notebooklm_add_source_file` | ✅ |
+| `rename(nb_id, src_id, title)` | `notebooklm_rename_source` | ✅ |
+| `get_guide(nb_id, src_id)` | `notebooklm_get_source_guide` | ✅ |
+| `get_fulltext(nb_id, src_id)` | `notebooklm_get_source_content` | ✅ |
+| `delete(nb_id, src_id)` | `notebooklm_delete_source` | ✅ |
+| `add_drive(nb_id, file_id, ...)` | — | ❌ |
+| `get(nb_id, src_id)` | — | ❌ |
+| `refresh(nb_id, src_id)` | — | ❌ |
+| `check_freshness(nb_id, src_id)` | — | ❌ |
+| `wait_until_ready(...)` | — (used internally) | ⚪ |
+| `wait_for_sources(...)` | — | ❌ |
+
+### Chat (4/8 covered)
+
+| notebooklm-py method | MCP tool | Status |
+|----------------------|----------|:------:|
+| `ask(nb_id, question, ...)` | `notebooklm_chat_ask` | ✅ |
+| `get_history(nb_id, limit)` | `notebooklm_get_chat_history` | ✅ |
+| `configure(nb_id, goal, ...)` | `notebooklm_configure_chat` | ✅ |
+| `set_mode(nb_id, mode)` | `notebooklm_set_chat_mode` | ✅ |
+| `get_conversation_turns(...)` | — | ❌ |
+| `get_conversation_id(nb_id)` | — | ❌ |
+| `get_cached_turns(...)` | — | ❌ |
+| `clear_cache(...)` | — | ❌ |
+
+### Artifacts (4/38 covered)
+
+| notebooklm-py method | MCP tool | Status |
+|----------------------|----------|:------:|
+| `list(nb_id)` | `notebooklm_list_artifacts` | ✅ |
+| `generate_audio(nb_id, ...)` | `notebooklm_generate_audio` | ✅ |
+| `generate_report(nb_id, ...)` | `notebooklm_generate_report` | ✅ |
+| `delete(nb_id, art_id)` | `notebooklm_delete_artifact` | ✅ |
+| `generate_video(...)`, `generate_quiz(...)`, `generate_flashcards(...)`, `generate_infographic(...)`, `generate_slide_deck(...)`, `generate_mind_map(...)`, `generate_data_table(...)`, `generate_cinematic_video(...)`, `generate_study_guide(...)` | — | ❌ |
+| **All `download_*`** (audio, video, report, quiz, flashcards, infographic, slide_deck, mind_map, data_table) | — | ❌ |
+| **All `export_*`** (report, data_table, generic) | — | ❌ |
+| `poll_status(nb_id, task_id)` | — | ❌ |
+| `wait_for_completion(...)` | — | ❌ |
+| `get(nb_id, art_id)`, `rename(...)`, `revise_slide(...)`, `suggest_reports(nb_id)` | — | ❌ |
+
+### Notes (2/7 covered)
+
+| notebooklm-py method | MCP tool | Status |
+|----------------------|----------|:------:|
+| `list(nb_id)` | `notebooklm_list_notes` | ✅ |
+| `create(nb_id, title, text)` | `notebooklm_create_note` | ✅ |
+| `get(nb_id, note_id)` | — | ❌ |
+| `update(nb_id, note_id, ...)` | — | ❌ |
+| `delete(nb_id, note_id)` | — | ❌ |
+| `list_mind_maps(nb_id)` | — | ❌ |
+| `delete_mind_map(nb_id, mm_id)` | — | ❌ |
+
+### Research (0/3 covered)
+
+| notebooklm-py method | MCP tool | Status |
+|----------------------|----------|:------:|
+| `start(nb_id, query, ...)` | — | ❌ |
+| `poll(nb_id)` | — | ❌ |
+| `import_sources(nb_id, task_id, ...)` | — | ❌ |
+
+### Sharing (0/6 covered)
+
+| notebooklm-py method | MCP tool | Status |
+|----------------------|----------|:------:|
+| `get_status(nb_id)` | — | ❌ |
+| `set_public(nb_id, bool)` | — | ❌ |
+| `set_view_level(nb_id, level)` | — | ❌ |
+| `add_user(nb_id, email, ...)` | — | ❌ |
+| `update_user(nb_id, email, ...)` | — | ❌ |
+| `remove_user(nb_id, email)` | — | ❌ |
+
+### Settings (1/4 covered)
+
+| notebooklm-py method | MCP tool | Status |
+|----------------------|----------|:------:|
+| `get_account_limits()` | `notebooklm_get_account` | ✅ |
+| `get_account_tier()` | `notebooklm_get_account` | ✅ |
+| `get_output_language()` | — | ❌ |
+| `set_output_language(code)` | — | ❌ |
+
+> **Summary**: 24 MCP tools covering 24 of ~91 methods. The main gaps are artifact download/export (requires file I/O), additional generate types (video, quiz, flashcards, etc.), research (multi-step workflow), sharing, and note CRUD extensions. See [Related](#related) for using the `notebooklm-py` CLI directly for unsupported features.
+
 ## Common Workflows
 
 ### Research a topic
@@ -191,6 +304,16 @@ You can verify the server is registered:
 2. notebooklm_add_source_url(nb_id, url)            → add web articles
 3. notebooklm_get_source_guide(nb_id, src_id)       → read AI summaries
 4. notebooklm_chat_ask(nb_id, "What are...")        → ask questions
+```
+
+### Upload and analyze local documents
+
+```
+1. notebooklm_list_notebooks
+2. notebooklm_add_source_file(nb_id, "~/papers/paper.pdf")    → upload PDF
+3. notebooklm_add_source_file(nb_id, "~/docs/notes.md")       → upload Markdown
+4. notebooklm_list_sources(nb_id)                             → verify all ready
+5. notebooklm_chat_ask(nb_id, "Summarize the papers...")      → ask questions
 ```
 
 ### Analyze a document set

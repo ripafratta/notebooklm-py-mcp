@@ -1,6 +1,6 @@
 """notebooklm-mcp: MCP server bridge for Google NotebookLM.
 
-Exposes 20 MCP tools covering notebooks, sources, chat, artifacts, notes,
+Exposes 24 MCP tools covering notebooks, sources, chat, artifacts, notes,
 and account information. Built with FastMCP on the official MCP Python SDK.
 
 All tools use the `notebooklm_` prefix to avoid naming collisions with
@@ -355,7 +355,7 @@ async def notebooklm_delete_notebook(notebook_id: str) -> str:
 
 
 # =========================================================================
-# SOURCE TOOLS (6)
+# SOURCE TOOLS (8)
 # =========================================================================
 
 
@@ -470,6 +470,100 @@ async def notebooklm_add_source_text(
 
 
 @mcp.tool(
+    name="notebooklm_add_source_file",
+    annotations={
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": False,
+        "openWorldHint": True,
+    },
+)
+async def notebooklm_add_source_file(
+    notebook_id: str,
+    file_path: str,
+    response_format: ResponseFormat = ResponseFormat.JSON,
+) -> str:
+    """Add a local file (PDF, Markdown, EPUB, Word, text) as a source.
+
+    Uploads the file to NotebookLM using Google's resumable upload protocol.
+    Wait for processing to complete before returning.
+
+    Supported formats: PDF (.pdf), Markdown (.md), plain text (.txt),
+    EPUB (.epub), Word (.docx).
+
+    The file must exist on the local filesystem where this MCP server runs.
+    When used with Claude Code or Claude Cowork (local execution), your
+    local files are accessible.
+
+    Args:
+        notebook_id: Target notebook ID. Find IDs via notebooklm_list_notebooks.
+        file_path: Absolute or relative path to the file to upload.
+        response_format: "json" for structured data, "markdown" for a summary line.
+    """
+    from pathlib import Path
+
+    try:
+        fpath = Path(file_path).resolve()
+        if not fpath.exists():
+            return f"Error: File not found: {fpath}"
+        if not fpath.is_file():
+            return f"Error: Not a regular file: {fpath}"
+
+        client = await get_client()
+        source = await client.sources.add_file(notebook_id, fpath)
+        if not source.is_ready:
+            source = await client.sources.wait_until_ready(notebook_id, source.id)
+
+        info = SourceInfo.from_source(source).model_dump()
+        if response_format == ResponseFormat.MARKDOWN:
+            return (
+                f"## File Uploaded\n\n"
+                f"**Title**: {info['title']}\n"
+                f"**Type**: {info['type']}\n"
+                f"**Status**: {info['status']}\n"
+                f"**ID**: `{info['id']}`\n"
+                f"**File**: {fpath.name}"
+            )
+        return json.dumps(info, indent=2, default=str)
+    except Exception as e:
+        return _format_error("notebooklm_add_source_file", e)
+
+
+@mcp.tool(
+    name="notebooklm_rename_source",
+    annotations={
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def notebooklm_rename_source(
+    notebook_id: str, source_id: str, new_title: str,
+    response_format: ResponseFormat = ResponseFormat.JSON,
+) -> str:
+    """Rename a source in a notebook.
+
+    Args:
+        notebook_id: Notebook ID containing the source.
+        source_id: Source ID to rename. Find IDs via notebooklm_list_sources.
+        new_title: The new display title for the source.
+        response_format: "json" for structured data, "markdown" for a summary line.
+    """
+    try:
+        if not new_title.strip():
+            return "Error: New title cannot be empty."
+        client = await get_client()
+        source = await client.sources.rename(notebook_id, source_id, new_title.strip())
+        info = SourceInfo.from_source(source).model_dump()
+        if response_format == ResponseFormat.MARKDOWN:
+            return f"## Source Renamed\n\n**New title**: {info['title']}\n**ID**: `{info['id']}`"
+        return json.dumps(info, indent=2, default=str)
+    except Exception as e:
+        return _format_error("notebooklm_rename_source", e)
+
+
+@mcp.tool(
     name="notebooklm_get_source_content",
     annotations={
         "readOnlyHint": True,
@@ -560,7 +654,7 @@ async def notebooklm_delete_source(notebook_id: str, source_id: str) -> str:
 
 
 # =========================================================================
-# CHAT TOOLS (2)
+# CHAT TOOLS (4)
 # =========================================================================
 
 
@@ -660,6 +754,122 @@ async def notebooklm_get_chat_history(
 # =========================================================================
 # ARTIFACT TOOLS (4)
 # =========================================================================
+
+
+@mcp.tool(
+    name="notebooklm_configure_chat",
+    annotations={
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def notebooklm_configure_chat(
+    notebook_id: str,
+    goal: str = "default",
+    response_length: str = "default",
+    custom_prompt: str | None = None,
+) -> str:
+    """Configure chat persona and response settings for a notebook.
+
+    Adjust the AI's behavior when answering questions. Choose from preset
+    goals and response lengths, or provide a custom persona prompt.
+
+    Args:
+        notebook_id: Notebook ID. Find IDs via notebooklm_list_notebooks.
+        goal: Chat persona. One of:
+            "default" — Standard helpful assistant
+            "learning_guide" — Socratic tutor, asks follow-up questions
+            "custom" — Use custom_prompt to define your own persona
+        response_length: Answer verbosity. One of:
+            "default" — Balanced responses
+            "shorter" — Concise, to the point
+            "longer" — Detailed, thorough explanations
+        custom_prompt: Required when goal is "custom".
+            Describe the persona (e.g. "You are a legal expert specializing in...").
+    """
+    try:
+        from notebooklm.rpc import ChatGoal, ChatResponseLength
+
+        goal_map = {
+            "default": ChatGoal.DEFAULT,
+            "learning_guide": ChatGoal.LEARNING_GUIDE,
+            "custom": ChatGoal.CUSTOM,
+        }
+        length_map = {
+            "default": ChatResponseLength.DEFAULT,
+            "shorter": ChatResponseLength.SHORTER,
+            "longer": ChatResponseLength.LONGER,
+        }
+
+        g = goal_map.get(goal)
+        if g is None:
+            valid = ", ".join(goal_map.keys())
+            return f"Invalid goal '{goal}'. Choose from: {valid}"
+
+        rl = length_map.get(response_length)
+        if rl is None:
+            valid = ", ".join(length_map.keys())
+            return f"Invalid response_length '{response_length}'. Choose from: {valid}"
+
+        client = await get_client()
+        await client.chat.configure(
+            notebook_id=notebook_id,
+            goal=g,
+            response_length=rl,
+            custom_prompt=custom_prompt,
+        )
+        prompt_info = f" with custom prompt" if custom_prompt else ""
+        return (
+            f"Chat configured for notebook '{notebook_id}': "
+            f"goal={goal}, length={response_length}{prompt_info}"
+        )
+    except Exception as e:
+        return _format_error("notebooklm_configure_chat", e)
+
+
+@mcp.tool(
+    name="notebooklm_set_chat_mode",
+    annotations={
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def notebooklm_set_chat_mode(notebook_id: str, mode: str = "default") -> str:
+    """Set chat mode using a predefined configuration.
+
+    Convenience wrapper that sets goal + response_length in one call.
+
+    Args:
+        notebook_id: Notebook ID. Find IDs via notebooklm_list_notebooks.
+        mode: Predefined mode. One of:
+            "default" — Standard assistant, balanced responses
+            "learning_guide" — Socratic tutor, longer responses
+            "concise" — Short, direct answers
+            "detailed" — In-depth, thorough explanations
+    """
+    try:
+        from notebooklm.types import ChatMode
+
+        mode_map = {
+            "default": ChatMode.DEFAULT,
+            "learning_guide": ChatMode.LEARNING_GUIDE,
+            "concise": ChatMode.CONCISE,
+            "detailed": ChatMode.DETAILED,
+        }
+        m = mode_map.get(mode)
+        if m is None:
+            valid = ", ".join(mode_map.keys())
+            return f"Invalid mode '{mode}'. Choose from: {valid}"
+
+        client = await get_client()
+        await client.chat.set_mode(notebook_id=notebook_id, mode=m)
+        return f"Chat mode set to '{mode}' for notebook '{notebook_id}'."
+    except Exception as e:
+        return _format_error("notebooklm_set_chat_mode", e)
 
 
 @mcp.tool(
