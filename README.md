@@ -2,6 +2,8 @@
 
 MCP (Model Context Protocol) server that bridges Claude Code / Claude Cowork with Google NotebookLM — enabling AI-powered research, source analysis, chat, and content generation through a structured tool interface.
 
+> **Built on** [`notebooklm-py`](https://github.com/teng-lin/notebooklm-py) (v0.4.1) by [Teng Lin](https://github.com/teng-lin) — a community-maintained Python client and CLI for Google NotebookLM. All API interaction, authentication, and data models are powered by `notebooklm-py`. This project wraps it as an MCP server for use with Claude Code and Claude Cowork.
+
 ## Features
 
 - **20 MCP tools** covering notebooks, sources, chat, artifacts, notes, and account management
@@ -21,14 +23,16 @@ MCP (Model Context Protocol) server that bridges Claude Code / Claude Cowork wit
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USER/notebooklm-py-mcp.git
+git clone https://github.com/marco/notebooklm-py-mcp.git
 cd notebooklm-py-mcp
 
 # Install in editable mode
 pip install -e .
 ```
 
-This installs the `notebooklm-mcp` command and all dependencies (`notebooklm-py>=0.4.1`, `mcp>=1.6.0`).
+This installs the `notebooklm-mcp` command along with its two core dependencies:
+- [`notebooklm-py`](https://github.com/teng-lin/notebooklm-py) >= 0.4.1 — Python client/CLI for NotebookLM
+- [`mcp`](https://github.com/modelcontextprotocol/python-sdk) >= 1.6.0 — Official MCP Python SDK
 
 ## Authentication
 
